@@ -163,7 +163,9 @@ void Map::operator=(const Map& other) {
 // 2nd Case : if not first node, rewire tail and the new node
 
 
-// void Map::dump() const { cout << endl << "SIZE : " << size() << endl;  for (Node* current = head; current != nullptr; current = current->next) { cout << "Key: " << current->key << ", Value: " << current->value << endl; } }
+void Map::dump() const { 
+	cout << endl << "SIZE : " << size() << endl;
+	for (Node* current = head; current != nullptr; current = current->next) { cout << "Key: " << current->key << ", Value: " << current->value << endl; } }
 
 void Map::swap(Map& other) {
 	Node* temp = head;
