@@ -261,11 +261,11 @@ bool combine(const Map& m1, const Map& m2, Map& result) {
 	return noDuplicate;	
 }
 
-void print(Node* current) {
+void Map::print(Node* current) {
 	if (current == nullptr) { return; }
-        dump(current->left); 
+        print(current->left); 
         cerr << current->key << " " << current->value << endl;
-	dump(current->right);
+	print(current->right);
 }
 // Init new temp map and set to m1
 // Create bool duplichecker counter
