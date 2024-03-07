@@ -98,6 +98,7 @@ bool Map::insert(const KeyType& key, const ValueType& value) {
 		}
 
 	}
+	return true;
 }
 // Check if key is already in and return false if so
 // Otherwise check if the map is empty and set the added node to root
@@ -217,6 +218,7 @@ int Map::getByIndex(Node* current, int i, int target, KeyType& key, ValueType& v
 		return size();
 	}
 	getByIndex(current->right, i, target, key, value);
+	return target;
 }
 // Gonna be honest, not sure how it works exactly; I was playing around with pre-order traversal to get nodes by index and it worked
 // If nullptr increments index by 1 I think
