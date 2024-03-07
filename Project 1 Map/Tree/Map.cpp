@@ -9,6 +9,7 @@ Map::Map() {
 Map::~Map() { deleteList(root); }
 bool Map::empty() const { return n == 0; }
 int Map::size() const { return n; }
+void Map::dump() { print(root); }
 bool Map::contains(const KeyType& key) const { 	return nullptr != find(root, key); }
 
 void Map::clearLeaf(Node* target) {
@@ -258,6 +259,13 @@ bool combine(const Map& m1, const Map& m2, Map& result) {
 	}
 	result = temp;
 	return noDuplicate;	
+}
+
+void print(Node* current) {
+	if (current == nullptr) { return; }
+        dump(current->left); 
+        cerr << current->key << " " << current->value << endl;
+	dump(current->right);
 }
 // Init new temp map and set to m1
 // Create bool duplichecker counter
