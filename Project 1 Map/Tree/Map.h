@@ -21,6 +21,7 @@ class Map {
 
         Node* root;
         int n;
+        void print(Node* current);
         void deleteList(Node* current);
         void recCopy(Node* current);
         int getByIndex(Node* current, int i, int target, KeyType& key, ValueType& value) const;
@@ -102,14 +103,7 @@ class Map {
         void swap(Map& other);
         // Exchange the contents of this map with the other one.
 
-        /*void dump(Node* current) {
-            if (current == nullptr) { return; }
-            dump(current->left); 
-            cout << current->key << " " << current->value << endl;
-            dump(current->right);
-        }
-
-        void print() { dump(root); }*/
+        void dump();
 };
 
 bool combine(const Map& m1, const Map& m2, Map& result);
