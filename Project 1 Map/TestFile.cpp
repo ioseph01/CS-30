@@ -8,9 +8,9 @@ using namespace std;
 
 
 static_assert(std::is_default_constructible<Map>::value,
-              "Map must be default-constructible.");
+    "Map must be default-constructible.");
 static_assert(std::is_copy_constructible<Map>::value,
-              "Map must be copy-constructible.");
+    "Map must be copy-constructible.");
 
 void ThisFunctionWillNeverBeCalled()
 {
@@ -25,7 +25,7 @@ void ThisFunctionWillNeverBeCalled()
     CHECKTYPE(&Map::get, bool (Map::*)(const KeyType&, ValueType&) const);
     CHECKTYPE(&Map::get, bool (Map::*)(int, KeyType&, ValueType&) const);
     CHECKTYPE(&Map::swap, void (Map::*)(Map&));
-    
+
     CHECKTYPE(combine, bool (*)(const Map&, const Map&, Map&));
     CHECKTYPE(subtract, void (*)(const Map&, const Map&, Map&));
 }
@@ -71,13 +71,13 @@ int main()
             }
             cout << all << total << endl;
         }
-        catch(...) {
+        catch (...) {
             cout << "Failed Default Test 1" << endl;
             exit(1);
         }
         cout << "Passed Default Test 1" << endl;
     } // Basic insertion and getByIndex function
-    
+
     {
         try {
             Map gpas;
@@ -91,13 +91,13 @@ int main()
             string k2;
             assert(gpas.get(1, k2, v) && k2 == k1);
         }
-        catch(...) {
+        catch (...) {
             cout << "Failed Default Test 2" << endl;
             exit(1);
         }
         cout << "Passed Default Test 2" << endl;
     } // Basic insertion and get function
-    
+
     {
         try {
             Map gpas2;
@@ -109,15 +109,15 @@ int main()
             assert(gpas2.contains(""));
             gpas2.erase("Fred");
             assert(gpas2.size() == 3 && gpas2.contains("Lucy") && gpas2.contains("Ethel") &&
-            gpas2.contains(""));
+                gpas2.contains(""));
         }
-        catch(...) {
+        catch (...) {
             cout << "Failed Default Test 3" << endl;
             exit(1);
         }
         cout << "Passed Default Test 3" << endl;
     } // Basic insertion, "" input, root deletion, size checking
-    
+
     {
         try {
             Map m1;
@@ -127,16 +127,16 @@ int main()
             m2.insert("Lucy", 2.956);
             m1.swap(m2);
             assert(m1.size() == 2 && m1.contains("Ethel") && m1.contains("Lucy") &&
-                   m2.size() == 1 && m2.contains("Fred"));
+                m2.size() == 1 && m2.contains("Fred"));
             // Default Test 4
         }
-        catch(...) {
+        catch (...) {
             cout << "Failed Default Test 4" << endl;
             exit(1);
         }
         cout << "Passed Default Test 4" << endl;
     } // Basic swap
-    
+
     {
         try {
             Map mm1, mm2, mm3, mm4;
@@ -151,10 +151,10 @@ int main()
             mm2.insertOrUpdate("Lucy", 654);
             assert(!combine(mm1, mm2, mm3) && mm3.contains("Fred") && mm3.contains("Ricky") && mm3.contains("Ethel") && mm3.size() == 3);
             // Combine function with assignment operator and different values
-            
-             assert(!combine(mm1, mm2, mm1) && mm1.contains("Fred") && mm1.contains("Ricky") && mm1.contains("Ethel") && mm1.size() == 3);
+
+            assert(!combine(mm1, mm2, mm1) && mm1.contains("Fred") && mm1.contains("Ricky") && mm1.contains("Ethel") && mm1.size() == 3);
             // Combine function with same map as result map and different values
-            
+
             cout << "Running TEST 6" << endl;
             mm4.insert("Fred", 123);
             mm4.insert("Ethel", 456);
@@ -166,7 +166,7 @@ int main()
             subtract(mm2, mm1, mm2);
             assert(mm2.size() == 1 && mm2.contains("Lucy"));
             // Subtract function with same map as result map
-            
+
             cout << "Running TEST 7" << endl;
             assert(mm3.erase("yo") == false);
             assert(mm3.erase("Fred") && mm3.size() == 0);
@@ -175,13 +175,13 @@ int main()
             assert(mm3.size() == 2 && mm3.contains("Tom") && mm3.contains("Ford"));
             // Deleting contents until empty and adding contents
         }
-        catch(...) {
+        catch (...) {
             cout << "Failed Default Test 5 or 6 or 7 " << endl;
             exit(1);
         }
         cout << "Passed Default Test 5, 6, 7" << endl;
     }
-    
+
     try {
         Map m;
         m.insert("A", 3);
@@ -198,31 +198,31 @@ int main()
         assert(val == 4);
         cout << "Passed Default Test 5, 6, 7" << endl;
     }
-    catch(...) {
+    catch (...) {
         cout << "Failed Default Test 5 or 6 or 7 " << endl;
         exit(1);
     }// Insert, Update, Erase, and Delete functions
-    
+
     {
         Map m;
         m.insert("C", 10);
         m.insert("B", 44);
         m.insert("A", 10);
         m.dump();
-        
+
         Map m2;
         m2.insert("A", 10);
         m2.insert("B", 44);
         m2.insert("C", 10);
         m2.dump();
-        
+
         Map m3;
         m3.insert("B", 10);
         m3.insert("C", 44);
         m3.insert("A", 10);
         m3.dump();
     } // Order testing
-    
+
     {
         Map m, m2;
         m.insert("J", 10);
@@ -247,28 +247,27 @@ int main()
         m.get(0, key, val);
         m.get(m.size() - 1, key2, val);
         assert(key == "A" && m.size() == 14 && key2 == "Z");
-        m.erase("A"); // Leaf deletion
+        assert(m.erase("A") && m.size() == 13); // Leaf Deletion
         dump2(m);
-        m.erase("F"); // 1 Child deletion
+        assert(m.erase("F") && m.size() == 12); // 1 Child Deletion
         dump2(m);
-        m.erase("D");
-        dump2(m); // 2 child deletion
-        m.erase("P");
-        dump2(m); // 2 child deletion
-        m.erase("J");
-        dump2(m); // 2 child Root deletion
-        
+        assert(m.erase("D") && m.size() == 11); // 2 Child Deletion
+        dump2(m);
+        assert(m.erase("P") && m.size() == 10); // 2 Child Deletion
+        dump2(m);
+        assert(m.erase("J") && m.size() == 9); // 2 Child Root Deletion
+        dump2(m);
+
         m2.insert("J", 3230);
         m2.insert("K", 12);
         m2.insert("Z", 23);
-        m2.erase("J");
+        assert(m2.erase("J") && m2.size() == 2); // 1 Child Deletion
         dump2(m2); // 1 child  Root deletion
-        
+
     } // GetByIndex, Duplication insert, Ordering, and Deletion testing
-    
-    
+
+
     test();
     cout << "Passed all tests" << endl;
 }
-
 
