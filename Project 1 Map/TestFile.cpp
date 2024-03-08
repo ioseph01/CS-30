@@ -1,274 +1,295 @@
 #include "Map.h"
-#include <string>
-#include <iostream>
-#include <cassert>
-#include <type_traits>
-#define CHECKTYPE(f, t) { auto p = (t)(f); (void)p; }
 using namespace std;
 
+Map::Map() : root(nullptr), n(0){}
 
-static_assert(std::is_default_constructible<Map>::value,
-              "Map must be default-constructible.");
-static_assert(std::is_copy_constructible<Map>::value,
-              "Map must be copy-constructible.");
+Map::~Map() { deleteList(root); }
+bool Map::empty() const { return n == 0; }
+int Map::size() const { return n; }
+void Map::dump() { print(root); cerr << endl; }
+bool Map::contains(const KeyType& key) const {     return nullptr != find(root, key); }
 
-void ThisFunctionWillNeverBeCalled()
-{
-    CHECKTYPE(&Map::operator=, Map & (Map::*)(const Map&));
-    CHECKTYPE(&Map::empty, bool (Map::*)() const);
-    CHECKTYPE(&Map::size, int  (Map::*)() const);
-    CHECKTYPE(&Map::insert, bool (Map::*)(const KeyType&, const ValueType&));
-    CHECKTYPE(&Map::update, bool (Map::*)(const KeyType&, const ValueType&));
-    CHECKTYPE(&Map::insertOrUpdate, bool (Map::*)(const KeyType&, const ValueType&));
-    CHECKTYPE(&Map::erase, bool (Map::*)(const KeyType&));
-    CHECKTYPE(&Map::contains, bool (Map::*)(const KeyType&) const);
-    CHECKTYPE(&Map::get, bool (Map::*)(const KeyType&, ValueType&) const);
-    CHECKTYPE(&Map::get, bool (Map::*)(int, KeyType&, ValueType&) const);
-    CHECKTYPE(&Map::swap, void (Map::*)(Map&));
+void Map::clearLeaf(Node* target) {
+    if (target == root) {
+        delete target;
+        root = nullptr;
+    }
+    else {
+        Node* parent = target->parent;
+        if (parent->left == target) { parent->left = nullptr; }
+        else { parent->right = nullptr; }
+        delete target;
+    }
+}
+// Used only when the target node to delete has no children
+// If it's root, delete target and set nullptr to avoid memory access errors
+// Else get the parent of the node and see if the target node is of the right or left
+// If it's the right of the parent then set the right to nullptr to avoid memory access issues
+// Else set the left of the parent to nullptr
+// Delete target node
+
+void Map::deleteNodeSingle(Node* target) {
+    Node* parent = target->parent;
+    if (target->left == nullptr && target->right == nullptr) { clearLeaf(target); }
+    else if (parent->left == target) {
+        if (target->right != nullptr) {
+            parent->left = target->right;
+            target->right->parent = target->parent;
+        }
+        else {
+            parent->left = target->left;
+            target->left->parent = target->parent;
+        }
+        delete target;
+    }
+    else {
+        if (target->right != nullptr) {
+            parent->right = target->right;
+            target->right->parent = target->parent;
+        }
+        else {
+            parent->right = target->left;
+            target->left->parent = target->parent;
+        }
+        delete target;
+    }
     
-    CHECKTYPE(combine, bool (*)(const Map&, const Map&, Map&));
-    CHECKTYPE(subtract, void (*)(const Map&, const Map&, Map&));
 }
+// Called when deleting a node with one child or when deleting the replacement of a node with two children
+// If no children then call the function that takes care of that case
+// else Find the parent and see if the target is of the left or right
+// For both, see if the target has one right node or one left node
+// Depending on both, rewire the target parent and target child
 
-void test()
-{
-    Map m, m2;
-    m.insert("B", 5);
-    m.insert("F", 3);
-    m.insert("T", 13);
-    m2.insert("A", 5);
-    m2.insert("T", 3);
-    subtract(m, m2, m);
-    assert(m.size() == 2 && m.contains("B") && m.contains("F") && !m.contains("A") && !m.contains("T"));
-}
-
-void dump2(Map& m) {
-    for (int i = 0; i < m.size(); i++) {
-        KeyType key;
-        ValueType val;
-        m.get(i, key, val);
-        cout << i << ") " << key << endl;
-    } cout << endl;
-}
-
-int main()
-{
-    {
-        try {
-            Map m;
-            m.insert("A", 10);
-            m.insert("B", 44);
-            m.insert("C", 10);
-            string all;
-            double total = 0;
-            for (int n = 0; n < m.size(); n++)
-            {
-                string k;
-                double v;
-                m.get(n, k, v);
-                all += k;
-                total += v;
+bool Map::insert(const KeyType& key, const ValueType& value) {
+    if (contains(key)) { return false; }
+    n += 1;
+    if (n == 1) {
+        root = new Node(key, value);
+        return true;
+    }
+    
+    else {
+        
+        Node* current = root;
+        while (current != nullptr) {
+            if (current->key > key) {
+                
+                if (current->left == nullptr) {
+                    Node* newNode = new Node(key, value);
+                    current->left = newNode;
+                    newNode->parent = current;
+                    return true;
+                }
+                current = current->left;
             }
-            cout << all << total << endl;
+            else {
+                if (current->right == nullptr) {
+                    
+                    Node* newNode = new Node(key, value);
+                    current->right = newNode;
+                    newNode->parent = current;
+                    return true;
+                }
+                current = current->right;
+            }
         }
-        catch(...) {
-            cout << "Failed Default Test 1" << endl;
-            exit(1);
-        }
-        cout << "Passed Default Test 1" << endl;
-    } // Basic insertion and getByIndex function
+        
+    }
+    return true;
+}
+// Check if key is already in and return false if so
+// Otherwise check if the map is empty and set the added node to root
+// If not then use while loops and comparisons to the key and other node keys to find the proper position to add the new node
+
+bool Map::update(const KeyType& key, const ValueType& value) {
+    Node* toUpdate = find(root, key);
+    if (toUpdate != nullptr) {
+        toUpdate->value = value;
+        return true;
+    }
+    return false;
+}
+// Finds adress of Node with key and updates to the given value if it exists
+
+bool Map::insertOrUpdate(const KeyType& key, const ValueType& value) {
+    if (contains(key)) {return update(key, value); }
+    return insert(key, value);
+}
+// Calls insert function or update function depending if the key is in the list or not
+
+bool Map::erase(const KeyType& key) {
+    Node* target = find(root, key);
+    if (target == nullptr) { return false; }
+    n -= 1;
+    if (target->left == nullptr && target->right == nullptr) { clearLeaf(target); }
     
-    {
-        try {
-            Map gpas;
-            gpas.insert("Fred", 2.956);
-            gpas.insert("Ethel", 3.538);
-            double v;
-            string k1;
-            gpas.get(1, k1, v);
-            assert(k1 == "Fred");
-            assert(gpas.get(1, k1, v) && (k1 == "Fred" || k1 == "Ethel"));
-            string k2;
-            assert(gpas.get(1, k2, v) && k2 == k1);
+    else if (target->left != nullptr && target->right != nullptr) {
+        Node* replacement = target->right;
+        while (replacement->left != nullptr) { replacement = replacement->left; }
+        target->key = replacement->key;
+        target->value = replacement->value;
+        deleteNodeSingle(replacement);
+    }
+    else {
+        if (target == root) {
+            if (target->left != nullptr) {
+                root = target->left;
+                target->left->parent = nullptr;
+            }
+            else {
+                root = target->right;
+                target->right->parent = nullptr;
+            }
+            delete target;
         }
-        catch(...) {
-            cout << "Failed Default Test 2" << endl;
-            exit(1);
-        }
-        cout << "Passed Default Test 2" << endl;
-    } // Basic insertion and get function
+        else { deleteNodeSingle(target); }
+        
+    }
+    return true;
+}
+// If the target key is not in the map then return false
+// Otherwise check children status
+// If 0 children, call the function to rewire and delete it
+// Else if 2 children, get a replacement node from the right subtree, copy contents to target, and call the function that deletes rewires with 1 child to target the replacement
+// Else 1 child
+//        If root, find the parent and see if it is of right or left to replace as nullptr
+//        Else call the function that rewires nodes with 1 child
+
+
+void Map::recCopy(Node* current) {
+    if (current == nullptr) { return; }
+    insert(current->key, current->value);
+    recCopy(current->left);
+    recCopy(current->right);
+}
+// Pre-order traversal to insert node contents to another
+
+Map::Map(const Map& other) {
+    n = 0;
+    root = nullptr;
+    recCopy(other.root);
+}
+// Sets counter to 0 which will later increase with recursive copy function
+
+void Map::operator=(const Map& other) {
+    deleteList(root);
+    n = 0;
+    root = nullptr;
+    recCopy(other.root);
+}
+// Clear list, set counter to 0, recursive copy
+
+void Map::deleteList(Node* current) {
+    if (current == nullptr) { return; }
+    deleteList(current->left);
+    deleteList(current->right);
+    delete current;
+}
+// Post-order traversal to delete nodes
+
+void Map::swap(Map& other) {
+    Node* temp = root;
+    int number = n;
+    root = other.root;
+    n = other.n;
+    other.root = temp;
+    other.n = number;
+}
+// Set aside temporary variables (root and size counter) to hold stuff of m1
+// Set m1 stuff to m2
+// Set m2 stuff to temp variables
+
+
+bool Map::get(const KeyType& key, ValueType& value) const {
+    Node* target = find(root, key);
+    if (target == nullptr) { return false; }
+    value = target->value;
+    return true;
+}
+// Get's address of node with key and if not nullptr, save the value
+
+int Map::getByIndex(Node* current, int i, int target, KeyType& key, ValueType& value) const {
+    if (current == nullptr) { return i + 1; }
+    i = getByIndex(current->left, i, target, key, value);
     
-    {
-        try {
-            Map gpas2;
-            gpas2.insert("Fred", 2.956);
-            assert(!gpas2.contains(""));
-            gpas2.insert("Ethel", 3.538);
-            gpas2.insert("", 4.000);
-            gpas2.insert("Lucy", 2.956);
-            assert(gpas2.contains(""));
-            gpas2.erase("Fred");
-            assert(gpas2.size() == 3 && gpas2.contains("Lucy") && gpas2.contains("Ethel") &&
-            gpas2.contains(""));
+    if (i == target + 1) { // cout << current->data;
+        key = current->key;
+        value = current->value;
+        return size();
+    }
+    if (i >= size()) {return size();}
+    return getByIndex(current->right, i, target, key, value);
+}
+// Gonna be honest, not sure how it works exactly; I was playing around with pre-order traversal to get nodes by index and it worked
+// If nullptr increments index by 1 I think
+// If index = target index - 1, copy contents and return
+// Return whatever number though on XCODE and other test trees I made, I had to return size() or it would not work properly
+
+
+
+bool Map::get(int i, KeyType& key, ValueType& value) const {
+    if (i > -1 && i < n) { getByIndex(root, 0, i, key, value); }
+    return true;
+}
+// If i between 0 and size counter then call get by index function
+
+
+bool combine(const Map& m1, const Map& m2, Map& result) {
+    Map temp = m1;
+    bool noDuplicate = true;
+    for (int i = 0; i < m2.size(); i++) {
+        KeyType key;
+        ValueType value, val;
+        m2.get(i, key, value);
+        if (!temp.insert(key, value)) {
+            temp.get(key, val);
+            if (val != value) {
+                temp.erase(key);
+                noDuplicate = false;
+            }
         }
-        catch(...) {
-            cout << "Failed Default Test 3" << endl;
-            exit(1);
-        }
-        cout << "Passed Default Test 3" << endl;
-    } // Basic insertion, "" input, and size checking
-    
-    {
-        try {
-            Map m1;
-            m1.insert("Fred", 2.956);
-            Map m2;
-            m2.insert("Ethel", 3.538);
-            m2.insert("Lucy", 2.956);
-            m1.swap(m2);
-            assert(m1.size() == 2 && m1.contains("Ethel") && m1.contains("Lucy") &&
-                   m2.size() == 1 && m2.contains("Fred"));
-            // Default Test 4
-        }
-        catch(...) {
-            cout << "Failed Default Test 4" << endl;
-            exit(1);
-        }
-        cout << "Passed Default Test 4" << endl;
-    } // Basic swap
-    
-    {
-        try {
-            Map mm1, mm2, mm3, mm4;
-            mm1.insert("Fred", 123);
-            mm1.insert("Ethel", 456);
-            mm1.insert("Lucy", 789);
-            mm2.insert("Lucy", 789);
-            mm2.insert("Ricky", 321);
-            cout << "Running TEST 5" << endl;
-            assert(combine(mm1, mm2, mm3) && mm3.contains("Fred") && mm3.contains("Ricky") && mm3.contains("Lucy") && mm3.contains("Ethel") && mm3.size() == 4);
-            // Combine function with copy constructor and same key/value pairs
-            mm2.insertOrUpdate("Lucy", 654);
-            assert(!combine(mm1, mm2, mm3) && mm3.contains("Fred") && mm3.contains("Ricky") && mm3.contains("Ethel") && mm3.size() == 3);
-            // Combine function with assignment operator and different values
-            
-             assert(!combine(mm1, mm2, mm1) && mm1.contains("Fred") && mm1.contains("Ricky") && mm1.contains("Ethel") && mm1.size() == 3);
-            // Combine function with same map as result map and different values
-            
-            cout << "Running TEST 6" << endl;
-            mm4.insert("Fred", 123);
-            mm4.insert("Ethel", 456);
-            mm4.insert("Lucy", 789);
-            mm2.insert("Ethel", 654);
-            subtract(mm4, mm2, mm3);
-            assert(mm3.size() == 1 && mm3.contains("Fred"));
-            // Subtract Function
-            subtract(mm2, mm1, mm2);
-            assert(mm2.size() == 1 && mm2.contains("Lucy"));
-            // Subtract function with same map as result map
-            
-            cout << "Running TEST 7" << endl;
-            assert(mm3.erase("yo") == false);
-            assert(mm3.erase("Fred") && mm3.size() == 0);
-            mm3.insert("Tom", 123);
-            mm3.insert("Ford", 456);
-            assert(mm3.size() == 2 && mm3.contains("Tom") && mm3.contains("Ford"));
-            // Deleting contents until empty and adding contents
-        }
-        catch(...) {
-            cout << "Failed Default Test 5 or 6 or 7 " << endl;
-            exit(1);
-        }
-        cout << "Passed Default Test 5, 6, 7" << endl;
     }
     
-    try {
-        Map m;
-        m.insert("A", 3);
-        m.insertOrUpdate("A", 5);
-        assert(m.size() == 1 && m.contains("A"));
-        m.erase("A");
-        assert(m.size() == 0);
-        m.insertOrUpdate("B", 4);
-        KeyType key = "B";
-        ValueType val;
-        m.get(key, val);
-        assert(m.contains("B") && m.size() == 1 && key == "B" && val == 4);
-        m.get("C", val);
-        assert(val == 4);
-        cout << "Passed Default Test 5, 6, 7" << endl;
+    for (int j = 0; j < result.size(); j++) {
+        KeyType key;
+        ValueType value;
+        result.get(0, key, value);
+        result.erase(key);
     }
-    catch(...) {
-        cout << "Failed Default Test 5 or 6 or 7 " << endl;
-        exit(1);
-    }// Insert, Update, Erase, and Delete functions
     
-    {
-        Map m;
-        m.insert("C", 10);
-        m.insert("B", 44);
-        m.insert("A", 10);
-        m.dump();
-        
-        Map m2;
-        m2.insert("A", 10);
-        m2.insert("B", 44);
-        m2.insert("C", 10);
-        m2.dump();
-        
-        Map m3;
-        m3.insert("B", 10);
-        m3.insert("C", 44);
-        m3.insert("A", 10);
-        m3.dump();
-    } // Order testing
-    
-    {
-        Map m, m2;
-        m.insert("J", 10);
-        m.insert("D", 440);
-        m.insert("F", 100);
-        m.insert("L", 210);
-        m.insert("M", 424);
-        m.insert("P", 102);
-        m.insert("Z", 310);
-        m.insert("B", 434);
-        m.insert("A", 103);
-        m.insert("N", 104);
-        m.insert("T", 444);
-        m.insert("F", 410);
-        m.insert("L", 210);
-        m.insert("C", 210);
-        m.insert("G", 210);
-        m.insert("I", 210);
-        KeyType key, key2;
-        ValueType val;
-        dump2(m);
-        m.get(0, key, val);
-        m.get(m.size() - 1, key2, val);
-        assert(key == "A" && m.size() == 14 && key2 == "Z");
-        m.erase("A"); // Leaf deletion
-        dump2(m);
-        m.erase("F"); // 1 Child deletion
-        dump2(m);
-        m.erase("D");
-        dump2(m); // 2 child deletion
-        m.erase("P");
-        dump2(m); // 2 child deletion
-        m.erase("J");
-        dump2(m); // 2 child Root deletion
-        
-        m2.insert("J", 3230);
-        m2.insert("K", 12);
-        m2.insert("Z", 23);
-        m2.erase("J");
-        dump2(m2); // 1 child  Root deletion
-        
-    } // GetByIndex, Duplication insert, Ordering, and Deletion testing
-    
-    
-    test();
-    cout << "Passed all tests" << endl;
+    result = temp;
+    return noDuplicate;
 }
 
+void Map::print(Node* current) {
+    if (current == nullptr) { return; }
+    print(current->left);
+    cerr << current->key << " " << current->value << endl;
+    print(current->right);
+}
+// Init new temp map and set to m1
+// Create bool duplichecker counter
+// Cycle through m2 and see what nodes can be added
+// If repeat detected that is of different value, erase the key value pair from temp map
+// Clear the result map and set it to temp
 
+void subtract(const Map& m1, const Map& m2, Map& result) {
+    Map temp = m1;
+    for (int i = 0; i < temp.size(); i++) {
+        KeyType key;
+        ValueType value;
+        temp.get(i, key, value);
+        if (m2.contains(key)) { temp.erase(key); }
+    }
+    for (int j = 0; j < result.size(); j++) {
+        KeyType key;
+        ValueType value;
+        result.get(0, key, value);
+        result.erase(key);
+    }
+    result = temp;
+}
+// Init temp map equal to m1
+// Cycle through temp nodes and see if any keys are in m2 to delete
+// Clear result and set it to temp map
