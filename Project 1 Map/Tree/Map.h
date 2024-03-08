@@ -27,18 +27,6 @@ class Map {
         int getByIndex(Node* current, int i, int target, KeyType& key, ValueType& value) const;
         void clearLeaf(Node* target);
         void deleteNodeSingle(Node* target);
-
-        Node* addToTree(Node* current, KeyType key, ValueType value) const {
-            if (current == nullptr) { return new Node(key, value); }
-            else if (current->key > key) { 
-                
-                current->left = addToTree(current->left, key, value); }
-            else { 
-                
-                current->right = addToTree(current->right, key, value); }
-            return current;
-        }
-
         Node* find(Node* current, const KeyType key) const {
             if (current == nullptr) { return nullptr; }
             if (current->key == key) { return current; }
