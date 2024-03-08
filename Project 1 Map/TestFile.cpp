@@ -49,7 +49,7 @@ void dump2(Map& m) {
         m.get(i, key, val);
         cout << i << ") " << key << endl;
     } cout << endl;
-}
+} // GetByIndex Function Test
 
 int main()
 {
@@ -116,7 +116,7 @@ int main()
             exit(1);
         }
         cout << "Passed Default Test 3" << endl;
-    } // Basic insertion, "" input, and size checking
+    } // Basic insertion, "" input, root deletion, size checking
     
     {
         try {
