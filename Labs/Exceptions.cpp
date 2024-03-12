@@ -1,64 +1,116 @@
-#include <iostream>
 #include <vector>
+#include <iostream>
+#include <stdexcept>
+
+
 using namespace std;
 
-int fib_bottom2(int n);
-int fib_bottom(int n);
-int fib_top(int n);
-int fib_top(int n, vector<int>& memo);
+
+class InvalidSize : public invalid_argument { 
+	public:
+		InvalidSize(const char* s) : invalid_argument(s) { }
+};
+
+class StackFull : public runtime_error {
+	private:
+		int m_i;
+
+	public:
+		StackFull(const char* s, int i) : runtime_error(s), m_i(i) {}
+		int GetValue() const { return m_i; }
+};
+
+class StackEmpty : public runtime_error {
+	public:
+		StackEmpty(const char* s) : runtime_error(s) {}
+};
 
 
-int fib(int n) {
-	if (n < 2) return n;
-	return fib(n - 1) + fib(n - 2);
-}
-
-int main() {
-
-	cout << "fib(10) rec:" << fib(10) << endl;
-	cout << "fib(10) top:" << fib_top(10) << endl;
-	//cout << "fib(10) bot:" << fib_bottom(10) << endl;
-	//cout << "fib(10) bot2:" << fib_bottom2(10) << endl;
-}
-
-// --------------- Fibonacci - top down approach
-
-int fib_top(int n) {
-
-	vector<int> memo(n + 1, -1);
-	return fib_top(n, memo);
-}
-
-int fib_top(int n, vector<int>& memo) {
-	if (n < 2) return n;
-	if (memo[n] != -1)
-		return memo[n];
-	memo[n] = fib_top(n - 1, memo) + fib_top(n - 2, memo);
-	return memo[n];
-}
-
-
-// --------------- Fibonacci - bottom up approach
-
-// #1
-int fib_bottom(int n) {
-	vector<int> memo(n + 1);
-	memo[0] = 0;
-	memo[1] = 1;
-	for (int i = 2; i <= n; i++) {
-		memo[i] = memo[i - 1] + memo[i - 2];
+class IntStack
+{
+public:
+	// MaxSize should be an unsigned int, but for the sake of example...
+	IntStack(int MaxSize)
+	{
+		if (MaxSize < 0) { throw InvalidSize("Cannot create a negative size stack"); }
+		else {
+			data.resize(MaxSize);
+			cur_index = 0;
+		}
 	}
-	return memo[n];
+
+	void push(int new_data)
+	{
+		if (cur_index == data.size()) { throw StackFull("Push to full stack", new_data); }
+		else
+		{
+			data.at(cur_index) = new_data;
+			cur_index++;
+		}
+	}
+
+	int pop()
+	{
+		if (cur_index == 0) { throw StackEmpty("Pop from empty stack"); }
+		else
+		{
+			// pop off the int and return it
+			cur_index--;
+			return data.at(cur_index);
+		}
+	}
+
+private:
+	vector<int> data;
+	unsigned int cur_index;
+};
+
+
+void StackError() {
+	try { throw; }
+	catch (InvalidSize& a) { cerr << a.what() << endl; }
+	catch (StackFull& a) { cerr << a.what() << ", value = " << a.GetValue() << endl; }
+	catch (StackEmpty& a) { cerr << a.what() << endl; }
+	catch (...) { cerr << "Unknown exception" << endl; }
 }
 
-// #2
-int fib_bottom2(int n) {
-	int a = 0, b = 1, temp;
-	if (n == 0) return a;
-	for (int i = 2; i < n; i++) {
-		temp = a + b;
-		a = b;
-		b = temp;
+int main()
+{
+	// Testing Constructor
+	try {
+		IntStack c_test(-10);
+		c_test.push(3);
+		c_test.push(4);
+		c_test.pop();
+		c_test.pop();
 	}
-	return a + b;
+	catch (...) { StackError(); }
+
+	
+
+	try {
+		// Testing push
+		IntStack push_test(5);
+
+		for (unsigned int i = 0; i < 7; i++) {
+			push_test.push(i);
+		}
+	}
+	catch (...) { StackError(); }
+
+	try {
+		// Testing pop
+		IntStack pop_test(2);
+
+		pop_test.push(1);
+		pop_test.push(2);
+		pop_test.pop();
+		pop_test.pop();
+		pop_test.pop();
+
+		cout << "Completed!" << endl;
+	}
+	catch (...) { StackError(); }
+
+	
 }
