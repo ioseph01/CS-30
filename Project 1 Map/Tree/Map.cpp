@@ -262,17 +262,18 @@ bool combine(const Map& m1, const Map& m2, Map& result) {
     return noDuplicate;
 }
 
+// Init new temp map and set to m1
+// Create bool duplichecker counter
+// Cycle through m2 and see what nodes can be added
+// If repeat detected that is of different value, erase the key value pair from temp map
+// Clear the result map and set it to temp
+
 void Map::print(Node* current) {
     if (current == nullptr) { return; }
     print(current->left);
     cerr << current->key << " " << current->value << endl;
     print(current->right);
 }
-// Init new temp map and set to m1
-// Create bool duplichecker counter
-// Cycle through m2 and see what nodes can be added
-// If repeat detected that is of different value, erase the key value pair from temp map
-// Clear the result map and set it to temp
 
 void subtract(const Map& m1, const Map& m2, Map& result) {
     Map temp = m1;
